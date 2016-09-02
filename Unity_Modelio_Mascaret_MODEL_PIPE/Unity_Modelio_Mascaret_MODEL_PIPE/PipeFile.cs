@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Unity_Modelio_Mascaret_MODEL_PIPE
 {
-    class PipeFile
+    public class PipeFile
     {
         string folder;
         public string Folder
@@ -37,8 +38,7 @@ namespace Unity_Modelio_Mascaret_MODEL_PIPE
         private DateTime modificationDate;
         public DateTime ModificationDate
         {
-            get {return modificationDate; }
-            set{ modificationDate = value; }
+            get {return System.IO.File.GetLastWriteTime(Filepath);}
         }
 
         public bool uploaded()
@@ -53,10 +53,37 @@ namespace Unity_Modelio_Mascaret_MODEL_PIPE
             return false;
         }
 
+        protected virtual bool IsFileLocked(FileInfo file)
+        {
+            FileStream stream = null;
+
+            try
+            {
+                stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                if (stream != null)
+                    stream.Close();
+                return true;
+            }
+            if (stream != null)
+                stream.Close();
+            //file is not locked
+            return false;
+        }
 
         public string read()
         {
-            //Check if file is open elsewhere !!!!!
+            FileInfo file = new FileInfo(Filepath);
+            while(IsFileLocked(file))
+            {
+                //Nothing
+            }
             return System.IO.File.ReadAllText(Filepath);
         }
 

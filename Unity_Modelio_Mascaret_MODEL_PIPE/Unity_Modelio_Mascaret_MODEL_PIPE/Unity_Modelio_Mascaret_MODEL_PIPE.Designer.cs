@@ -102,7 +102,7 @@
             // 
             // stopPipeButton
             // 
-            this.stopPipeButton.Location = new System.Drawing.Point(127, 156);
+            this.stopPipeButton.Location = new System.Drawing.Point(132, 156);
             this.stopPipeButton.Name = "stopPipeButton";
             this.stopPipeButton.Size = new System.Drawing.Size(75, 23);
             this.stopPipeButton.TabIndex = 7;

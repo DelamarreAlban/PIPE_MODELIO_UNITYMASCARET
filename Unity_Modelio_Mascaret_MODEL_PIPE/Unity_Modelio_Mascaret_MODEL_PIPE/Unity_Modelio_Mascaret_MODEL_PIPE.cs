@@ -18,7 +18,8 @@ namespace Unity_Modelio_Mascaret_MODEL_PIPE
         private PipeFile inputFile;
         private PipeFile outputFile;
 
-        private DateTime lastmodification;
+        Listener listener;
+        Thread listenerThread;
 
         public Unity_Modelio_Mascaret_MODEL_PIPE()
         {
@@ -60,45 +61,89 @@ namespace Unity_Modelio_Mascaret_MODEL_PIPE
             }
         }
 
+
+
+        
+
+        private void startListening()
+        {
+            if (inputFile != null && outputFile != null)
+            {
+                listener = new Listener(inputFile,outputFile);
+                listenerThread = new Thread(listener.Listen);
+
+                // Start the worker thread.
+                listenerThread.Start();
+            }
+        }
+
+        private void startPipeButton_Click(object sender, EventArgs e)
+        {
+            startListening();
+        }
+
+        private void stopPipeButton_Click(object sender, EventArgs e)
+        {
+            if(listener != null && listenerThread!= null)
+            {
+                listener.requestStopListening();
+                Console.WriteLine(listenerThread.ThreadState);
+            }
+        }
+    }
+
+
+    public class Listener
+    {
+        private PipeFile _input;
+        private PipeFile _output;
+
+        public Listener(PipeFile input, PipeFile output)
+        {
+            this._input = input;
+            this._output = output;
+        }
+
+        // This method will be called when the thread is started. 
+        public void Listen()
+        {
+            Console.WriteLine("START LISTENING");
+            while (!_stopListening)
+            {
+                if(_input.uploaded())
+                {
+                    if(!outputUpToDate())
+                    {
+                        Console.WriteLine("*********************************************************");
+                        _stopListening = !_stopListening;
+                    }
+                }
+                Thread.Sleep(1000);
+            }
+            updateOutput();
+        }
+
+        public void requestStopListening()
+        {
+            _stopListening = true;
+            Console.WriteLine("Stop listening");
+        }
+
         private bool outputUpToDate()
         {
-            if (inputFile.read().Equals(outputFile.read()))
+            if (_input.ModificationDate.Equals(_output.ModificationDate))
                 return true;
             return false;
         }
 
         private void updateOutput()
         {
-            outputFile.write(inputFile.read());
-            listen();
+            Console.WriteLine("Updating output");
+            _output.write(_input.read());
+            _stopListening = false;
+            Listen();
         }
 
-        private void listen()
-        {
-            if (inputFile != null && outputFile != null)
-            {
-                while (outputUpToDate())
-                {
-                    if (inputFile.uploaded())
-                    {
-                        Console.WriteLine("*********************************************************");
-
-                    }
-                }
-                updateOutput();
-            }
-        }
-
-        private void startPipeButton_Click(object sender, EventArgs e)
-        {
-            listen();
-        }
-
-
-
-        private void stopPipeButton_Click(object sender, EventArgs e)
-        {
-
-        }
+        private bool _stopListening = false;
     }
 }
